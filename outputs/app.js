@@ -2299,7 +2299,7 @@ function renderFavorites() {
     const activeClass = currentCity && currentCity.id === city.id ? " active" : "";
     return `
       <div class="city-item${activeClass}">
-        <button type="button" data-city-id="${city.id}">
+        <button type="button" data-city-id="${city.id}" data-lat="${city.latitude}" data-lng="${city.longitude}">
           ${getPrimaryPlaceName(city)}
           <small>${formatCity(city)}</small>
         </button>
@@ -2382,9 +2382,9 @@ function getCurrentPosition() {
     }
 
     navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 10 * 60 * 1000
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 5 * 60 * 1000
     });
   });
 }
@@ -2475,18 +2475,26 @@ locationButton.addEventListener("click", async () => {
 favoriteButton.addEventListener("click", addCurrentFavorite);
 
 favoriteList.addEventListener("click", (event) => {
-  const cityButton = event.target.closest("[data-city-id]");
   const removeButton = event.target.closest("[data-remove-id]");
-
   if (removeButton) {
     removeFavorite(removeButton.dataset.removeId);
     return;
   }
 
+  const cityButton = event.target.closest("[data-city-id]");
   if (cityButton) {
-    const city = favorites.find((item) => item.id === cityButton.dataset.cityId);
+    const cityId = cityButton.dataset.cityId;
+    const city = favorites.find((item) => item.id === cityId);
     if (city) {
       loadCity(city);
+    } else {
+      const fallbackCity = favorites.find(
+        (item) => Math.abs(item.latitude - parseFloat(cityButton.dataset.lat)) < 0.01 &&
+                  Math.abs(item.longitude - parseFloat(cityButton.dataset.lng)) < 0.01
+      );
+      if (fallbackCity) {
+        loadCity(fallbackCity);
+      }
     }
   }
 });
