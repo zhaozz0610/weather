@@ -828,6 +828,28 @@ function getWeatherIcon(code) {
   return "◌";
 }
 
+function getWeatherAnimationClass(code) {
+  if ([0, 1].includes(code)) {
+    return "clear";
+  }
+  if ([2, 3].includes(code)) {
+    return "clouds";
+  }
+  if ([45, 48].includes(code)) {
+    return "fog";
+  }
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
+    return "rain";
+  }
+  if ([71, 73, 75, 77, 85, 86].includes(code)) {
+    return "snow";
+  }
+  if ([95, 96, 99].includes(code)) {
+    return "thunderstorm";
+  }
+  return "clouds";
+}
+
 function formatClock(timeText) {
   if (!timeText) {
     return "--:--";
@@ -1850,14 +1872,169 @@ function clearSearchResults() {
   searchResults.innerHTML = "";
 }
 
-function renderCurrent(city, current) {
-  locationName.textContent = getPrimaryPlaceName(city);
-  weatherState.textContent = getWeatherText(current.weather_code);
-  renderWeatherAnimation(current.weather_code);
-  currentTemp.textContent = roundValue(current.temperature_2m);
-  humidity.textContent = roundValue(current.relative_humidity_2m);
-  windSpeed.textContent = roundValue(current.wind_speed_10m);
+// === IOS POLISH: RENDER WEATHER CONTENT ===
+// 重建完整天气区域HTML，避免骨架屏替换后元素引用失效
+function renderWeatherContent(city, weather) {
+  if (!weatherMain) return;
+  const current = weather.current;
+  const daily = weather.daily;
+  const hourly = weather.hourly;
+
+  const maxTemp = roundValue(daily?.temperature_2m_max?.[0]);
+  const minTemp = roundValue(daily?.temperature_2m_min?.[0]);
+  const sunrise = formatClock(daily?.sunrise?.[0]);
+  const sunset = formatClock(daily?.sunset?.[0]);
+
+  weatherMain.innerHTML = `
+    <div class="status-bar" id="status-bar">已更新 ${formatCity(city)} · ${current.time.replace("T", " ")}</div>
+
+    <section class="current-grid card-enter">
+      <article class="current-card">
+        <div class="current-card-top">
+          <div class="location-info">
+            <p class="eyebrow">current weather</p>
+            <h2 id="location-name">${getPrimaryPlaceName(city)}</h2>
+            <p class="weather-state" id="weather-state">${getWeatherText(current.weather_code)}</p>
+          </div>
+          <div class="weather-animation" id="weather-animation" aria-hidden="true">
+            <span class="weather-animation-fallback weather-anim-${getWeatherAnimationClass(current.weather_code)}">${getWeatherIcon(current.weather_code)}</span>
+          </div>
+        </div>
+        <div class="temp-block">
+          <span id="current-temp">${roundValue(current.temperature_2m)}</span>
+          <small>°C</small>
+        </div>
+        <p class="daily-range" id="daily-range">最高 ${maxTemp}° / 最低 ${minTemp}°</p>
+        <div class="weather-stats" aria-label="当前天气指标">
+          <div class="stat-pill">
+            <span aria-hidden="true">💧</span>
+            <p>湿度 <strong id="humidity">${roundValue(current.relative_humidity_2m)}</strong>%</p>
+          </div>
+          <div class="stat-pill">
+            <span aria-hidden="true">〰</span>
+            <p>风速 <strong id="wind-speed">${roundValue(current.wind_speed_10m)}</strong> km/h</p>
+          </div>
+          <div class="stat-pill">
+            <span aria-hidden="true">☀</span>
+            <p>日出 <strong id="sunrise-time">${sunrise}</strong></p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="sun-track-card card-enter card-enter-delay-1" id="sun-track-card" aria-label="日出日落进度">
+      <div class="sun-track-head">
+        <div>
+          <p class="eyebrow">sunrise &amp; sunset</p>
+          <h2>日出日落</h2>
+        </div>
+        <span class="sun-track-status" id="sun-track-status">--</span>
+      </div>
+      <div class="sun-track-body">
+        <span class="sun-track-label sun-track-sunrise">
+          <span aria-hidden="true">🌅</span>
+          <strong id="sun-track-sunrise-time">${sunrise}</strong>
+        </span>
+        <div class="sun-track-bar" id="sun-track-bar">
+          <div class="sun-track-rail">
+            <div class="sun-track-fill" id="sun-track-fill"></div>
+          </div>
+          <div class="sun-track-dot" id="sun-track-dot">
+            <span class="sun-track-dot-label" id="sun-track-dot-label">现在</span>
+          </div>
+        </div>
+        <span class="sun-track-label sun-track-sunset">
+          <span aria-hidden="true">🌇</span>
+          <strong id="sun-track-sunset-time">${sunset}</strong>
+        </span>
+      </div>
+    </section>
+
+    <section class="insight-grid">
+      <article class="insight-card aqi-card card-enter card-enter-delay-2" id="aqi-card">
+        <div class="insight-head">
+          <div>
+            <p class="eyebrow">air quality</p>
+            <h2>空气质量</h2>
+          </div>
+          <span class="insight-icon" aria-hidden="true">AQI</span>
+        </div>
+        <div class="insight-value-row">
+          <strong id="aqi-value">--</strong>
+          <span id="aqi-level">暂无数据</span>
+        </div>
+        <div class="aqi-bar" aria-hidden="true">
+          <span></span>
+        </div>
+        <p class="insight-tip" id="aqi-tip">适合户外活动</p>
+      </article>
+      <article class="insight-card uvi-card card-enter card-enter-delay-3" id="uvi-card">
+        <div class="insight-head">
+          <div>
+            <p class="eyebrow">uv index</p>
+            <h2>紫外线峰值</h2>
+          </div>
+          <span class="insight-icon" aria-hidden="true">☀</span>
+        </div>
+        <div class="insight-value-row">
+          <strong id="uvi-value">--</strong>
+          <span id="uvi-level">暂无数据</span>
+        </div>
+        <p class="insight-tip" id="uvi-tip">外出建议佩戴太阳镜</p>
+      </article>
+    </section>
+
+    <section class="forecast-section card-enter card-enter-delay-4">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">5-day forecast</p>
+          <h2>5 天天气预报</h2>
+        </div>
+      </div>
+      <div class="forecast-row" id="forecast-row">${renderForecastHtml(daily)}</div>
+    </section>
+
+    <section class="chart-section card-enter card-enter-delay-5">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">next 24 hours</p>
+          <h2>24 小时温度</h2>
+        </div>
+        <p id="chart-note">°C</p>
+      </div>
+      <div class="chart-frame">
+        <canvas id="temperature-chart" aria-label="24小时温度折线图" role="img"></canvas>
+      </div>
+    </section>
+  `;
+
   applyWeatherTheme(current.weather_code);
+  renderSunTrack(daily);
+  renderChart(hourly);
+}
+
+function renderForecastHtml(daily) {
+  if (!daily || !daily.time) return "";
+  return daily.time.map((date, index) => {
+    const max = roundValue(daily.temperature_2m_max[index]);
+    const min = roundValue(daily.temperature_2m_min[index]);
+    const rain = roundValue(daily.precipitation_probability_max[index]);
+    const code = daily.weather_code[index];
+    const state = getWeatherText(code);
+    const icon = getWeatherIcon(code);
+    return `
+      <article class="forecast-card">
+        <p class="forecast-date">${getWeekday(date)}</p>
+        <span class="forecast-icon" aria-hidden="true">${icon}</span>
+        <strong>${state}</strong>
+        <div class="forecast-temp">
+          <b>${max}°</b>
+          <span>${min}°</span>
+        </div>
+        <p class="rain-note">降水概率 ${rain}%</p>
+      </article>
+    `;
+  }).join("");
 }
 
 // === UI REFACTOR START ===
@@ -2020,14 +2197,9 @@ async function loadCity(city, options = {}) {
   try {
     const weather = await fetchWeather(city);
     updateThemeMode(weather);
-    renderCurrent(city, weather.current);
-    renderDailySummary(weather.daily);
-    renderSunTrack(weather.daily);
-    renderForecast(weather.daily);
-    renderChart(weather.hourly);
+    renderWeatherContent(city, weather);
     await updateAirAndUv(city, weather);
     saveJson(lastCityKey, city);
-    setStatus(`已更新 ${formatCity(city)} · ${weather.current.time.replace("T", " ")}`, "success");
     startAutoRefresh();
     if (!silent) {
       window.setTimeout(triggerCardEntryAnimations, 50);
