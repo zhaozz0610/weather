@@ -1897,9 +1897,11 @@ async function searchPlacesGaode(query) {
     return data.geocodes.map((geocode) => {
       const [lng, lat] = geocode.location.split(",").map(parseFloat);
       const wgs = gcjToWgs(lat, lng);
+      const name = geocode.district || geocode.city || geocode.province;
 
       return {
-        name: geocode.district || geocode.city || geocode.province,
+        id: `gaode-${name}-${wgs.lat.toFixed(2)}-${wgs.lng.toFixed(2)}`,
+        name: name,
         latitude: wgs.lat,
         longitude: wgs.lng,
         district: geocode.district || "",
@@ -2357,7 +2359,12 @@ function addCurrentFavorite() {
     return;
   }
 
-  const exists = favorites.some((city) => city.id === currentCity.id);
+  const exists = favorites.some(
+    (city) =>
+      city.id === currentCity.id ||
+      Math.abs(city.latitude - currentCity.latitude) < 0.05 &&
+        Math.abs(city.longitude - currentCity.longitude) < 0.05
+  );
   if (!exists) {
     favorites = [currentCity, ...favorites].slice(0, 8);
     saveJson(favoritesKey, favorites);
