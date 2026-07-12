@@ -139,17 +139,22 @@ function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+// === IOS POLISH: STATUS BAR ===
+// 每次重新查询 status-bar，因为 showSkeleton 会用 innerHTML 替换掉它
 function setStatus(message, type = "info") {
-  statusBar.textContent = message;
-  statusBar.classList.remove("error", "loading", "success");
+  const bar = document.querySelector("#status-bar");
+  if (!bar) return;
+  bar.textContent = message;
+  bar.classList.remove("error", "loading", "success");
   if (type !== "info") {
-    statusBar.classList.add(type);
+    bar.classList.add(type);
   }
 }
 
 // === IOS POLISH: SKELETON LOADING ===
 function showSkeleton() {
   if (!weatherMain) return;
+  weatherMain.dataset.skeleton = "true";
   weatherMain.innerHTML = `
     <div class="status-bar" id="status-bar">正在加载天气数据...</div>
     <section class="current-grid card-enter">
@@ -257,15 +262,40 @@ function triggerErrorShake() {
   });
 }
 
+// === IOS POLISH: LOADING STATE ===
 function setLoading(loading, silent = false) {
   isLoading = loading;
   document.body.classList.toggle("is-loading", loading && !silent);
-  statusBar.classList.toggle("loading", loading && !silent);
+  const bar = document.querySelector("#status-bar");
+  if (bar) {
+    bar.classList.toggle("loading", loading && !silent);
+  }
   form.querySelector("button[type='submit']").disabled = loading;
   locationButton.disabled = loading;
   favoriteButton.disabled = loading || !currentCity;
   if (loading && !silent) {
     showSkeleton();
+  } else if (!loading && weatherMain && weatherMain.dataset.skeleton === "true") {
+    // 骨架屏清除：成功时 renderCurrent 会替换内容，失败时由 showErrorState 替换
+    weatherMain.dataset.skeleton = "false";
+  }
+}
+
+// === IOS POLISH: ERROR STATE ===
+function showErrorState(message) {
+  if (!weatherMain) return;
+  weatherMain.dataset.skeleton = "false";
+  weatherMain.innerHTML = `
+    <div class="status-bar error" id="status-bar">${message}</div>
+    <section class="error-state card-enter">
+      <div class="error-icon">⚠️</div>
+      <p class="error-message">${message}</p>
+      <button class="retry-button" id="retry-button" type="button">重试</button>
+    </section>
+  `;
+  const retryBtn = document.querySelector("#retry-button");
+  if (retryBtn && currentCity) {
+    retryBtn.addEventListener("click", () => loadCity(currentCity));
   }
 }
 
@@ -2003,9 +2033,10 @@ async function loadCity(city, options = {}) {
       window.setTimeout(triggerCardEntryAnimations, 50);
     }
   } catch (error) {
-    setStatus(error.message, "error");
     if (!silent) {
-      window.setTimeout(triggerErrorShake, 100);
+      showErrorState(error.message);
+    } else {
+      setStatus(error.message, "error");
     }
   } finally {
     setLoading(false, silent);
@@ -2163,8 +2194,13 @@ function boot() {
   }
 
   searchPlaces("北京")
-    .then((places) => loadCity(places[0]))
-    .catch((error) => setStatus(error.message || "输入区县或城市名，查看实时天气。", "error"));
+    .then((places) => {
+      if (places && places.length > 0) {
+        return loadCity(places[0]);
+      }
+      showErrorState("未找到北京天气数据，请手动搜索城市。");
+    })
+    .catch((error) => showErrorState(error.message || "无法加载天气数据，请检查网络后重试。"));
 }
 
 // === IOS POLISH: VISIBILITY HANDLER ===

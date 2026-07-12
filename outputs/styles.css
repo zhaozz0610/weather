@@ -1450,6 +1450,53 @@ body[data-mode="night"] .loading-overlay {
   50% { opacity: 0.7; }
 }
 
+/* === IOS POLISH: ERROR STATE === */
+.error-state {
+  background: var(--paper-white);
+  border: 3px solid rgba(229, 62, 62, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 40px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  animation: card-shake 0.4s var(--ease-smooth);
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.error-message {
+  color: #c53030;
+  font-size: var(--font-subheading);
+  font-weight: 700;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.retry-button {
+  background: var(--warm-orange);
+  color: var(--paper-white);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 32px;
+  font-size: var(--font-body);
+  font-family: var(--font-stack);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--anim-speed-fast) var(--ease-smooth),
+              box-shadow var(--anim-speed-fast) var(--ease-smooth);
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(224, 122, 95, 0.4);
+}
+
+.retry-button:active {
+  transform: translateY(0);
+}
+
 /* === IOS POLISH: PERFORMANCE OPTIMIZATIONS === */
 .weather-main > * {
   will-change: transform, opacity;
