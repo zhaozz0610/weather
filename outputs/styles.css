@@ -343,8 +343,8 @@ body[data-mode="night"] {
 }
 
 .city-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 
@@ -358,7 +358,6 @@ body[data-mode="night"] {
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.18s ease;
-  max-width: calc(50% - 4px);
   min-width: 0;
 }
 

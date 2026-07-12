@@ -39,7 +39,14 @@
 - 收藏城市列表改为圆角胶囊样式，删除按钮改为圆形×并带悬停旋转效果
 - 日出日落进度条：iOS天气App风格，渐变轨道+小球指示器，日间/夜间模式，60秒自动更新
 - iOS天气App级最终打磨：统一字体层级变量、放缓动画速度（太阳6s/雨7s/雪8s/云10s/雾7s/雷暴3.2s）、卡片淡入上移动画、完整骨架屏加载、错误抖动效果、will-change性能优化、页面离开暂停动画
-- CSS/JS版本号已更新为 ?v=ios-polish-1
+- CSS/JS版本号已更新为 ?v=ios-polish-4
+
+## iOS 打磨阶段修复历史
+- **Bug 1**：showSkeleton() 用 innerHTML 替换整个 .weather-main，导致 setStatus() 缓存的 statusBar 元素引用失效 → 改为每次重新查询
+- **Bug 2**：API 失败后骨架屏不消失 → 新增 showErrorState() 显示错误提示+重试按钮
+- **Bug 3**：renderCurrent 等渲染函数依赖缓存的元素引用，innerHTML 替换后全部失效 → 创建 renderWeatherContent() 重建完整 HTML
+- **Bug 4**：renderSunTrack / renderAirAndUvValues / renderChart 同样依赖缓存引用 → 全部改为 document.querySelector 重新查询
+- **核心教训**：使用 innerHTML 替换区域时，所有该区域内的元素引用都必须动态查询，不能缓存
 
 ## 待确认
 - 用户是否满意新的温暖手绘风格？
