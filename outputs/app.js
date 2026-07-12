@@ -1525,17 +1525,29 @@ function getNestedValue(source, paths) {
 }
 
 function resetAirAndUv() {
-  aqiValue.textContent = "--";
-  aqiLevel.textContent = "暂无数据";
-  aqiTip.textContent = "适合户外活动";
-  aqiCard.style.setProperty("--aqi-accent", "var(--aqi-good)");
-  aqiCard.style.setProperty("--aqi-progress", "0%");
-  aqiCard.classList.add("is-muted");
+  const aqiValEl = document.querySelector("#aqi-value");
+  const aqiLvlEl = document.querySelector("#aqi-level");
+  const aqiTipEl = document.querySelector("#aqi-tip");
+  const aqiCardEl = document.querySelector("#aqi-card");
 
-  uviValue.textContent = "--";
-  uviLevel.textContent = "暂无数据";
-  uviTip.textContent = "外出建议佩戴太阳镜";
-  uviCard.classList.add("is-muted");
+  if (aqiValEl) aqiValEl.textContent = "--";
+  if (aqiLvlEl) aqiLvlEl.textContent = "暂无数据";
+  if (aqiTipEl) aqiTipEl.textContent = "适合户外活动";
+  if (aqiCardEl) {
+    aqiCardEl.style.setProperty("--aqi-accent", "var(--aqi-good)");
+    aqiCardEl.style.setProperty("--aqi-progress", "0%");
+    aqiCardEl.classList.add("is-muted");
+  }
+
+  const uviValEl = document.querySelector("#uvi-value");
+  const uviLvlEl = document.querySelector("#uvi-level");
+  const uviTipEl = document.querySelector("#uvi-tip");
+  const uviCardEl = document.querySelector("#uvi-card");
+
+  if (uviValEl) uviValEl.textContent = "--";
+  if (uviLvlEl) uviLvlEl.textContent = "暂无数据";
+  if (uviTipEl) uviTipEl.textContent = "外出建议佩戴太阳镜";
+  if (uviCardEl) uviCardEl.classList.add("is-muted");
 }
 
 function extractOpenWeatherAirAndUv(data) {
@@ -1582,22 +1594,32 @@ function getWeatherUvi(weather) {
 }
 
 function renderAirAndUvValues({ aqi = null, uvi = null, aqiScale = "owm" }) {
-  if (Number.isFinite(aqi)) {
+  const aqiValEl = document.querySelector("#aqi-value");
+  const aqiLvlEl = document.querySelector("#aqi-level");
+  const aqiTipEl = document.querySelector("#aqi-tip");
+  const aqiCardEl = document.querySelector("#aqi-card");
+
+  if (Number.isFinite(aqi) && aqiValEl && aqiLvlEl && aqiTipEl && aqiCardEl) {
     const meta = getAqiMeta(aqi, aqiScale);
-    aqiValue.textContent = Math.round(aqi);
-    aqiLevel.textContent = meta.label;
-    aqiTip.textContent = meta.tip;
-    aqiCard.style.setProperty("--aqi-accent", meta.color);
-    aqiCard.style.setProperty("--aqi-progress", meta.progress);
-    aqiCard.classList.remove("is-muted");
+    aqiValEl.textContent = Math.round(aqi);
+    aqiLvlEl.textContent = meta.label;
+    aqiTipEl.textContent = meta.tip;
+    aqiCardEl.style.setProperty("--aqi-accent", meta.color);
+    aqiCardEl.style.setProperty("--aqi-progress", meta.progress);
+    aqiCardEl.classList.remove("is-muted");
   }
 
-  if (Number.isFinite(uvi)) {
+  const uviValEl = document.querySelector("#uvi-value");
+  const uviLvlEl = document.querySelector("#uvi-level");
+  const uviTipEl = document.querySelector("#uvi-tip");
+  const uviCardEl = document.querySelector("#uvi-card");
+
+  if (Number.isFinite(uvi) && uviValEl && uviLvlEl && uviTipEl && uviCardEl) {
     const meta = getUviMeta(uvi);
-    uviValue.textContent = uvi.toFixed(1);
-    uviLevel.textContent = meta.label;
-    uviTip.textContent = meta.tip;
-    uviCard.classList.remove("is-muted");
+    uviValEl.textContent = uvi.toFixed(1);
+    uviLvlEl.textContent = meta.label;
+    uviTipEl.textContent = meta.tip;
+    uviCardEl.classList.remove("is-muted");
   }
 }
 
@@ -1664,13 +1686,21 @@ async function updateAirAndUv(city, weather) {
 let sunTrackTimer = null;
 
 function resetSunTrack() {
-  sunTrackStatus.textContent = "--";
-  sunTrackSunriseTime.textContent = "--:--";
-  sunTrackSunsetTime.textContent = "--:--";
-  sunTrackFill.style.width = "0%";
-  sunTrackDot.style.left = "0%";
-  sunTrackDotLabel.textContent = "现在";
-  sunTrackCard.classList.remove("is-night");
+  const card = document.querySelector("#sun-track-card");
+  const status = document.querySelector("#sun-track-status");
+  const sunrise = document.querySelector("#sun-track-sunrise-time");
+  const sunset = document.querySelector("#sun-track-sunset-time");
+  const fill = document.querySelector("#sun-track-fill");
+  const dot = document.querySelector("#sun-track-dot");
+  const label = document.querySelector("#sun-track-dot-label");
+  if (!card || !status || !sunrise || !sunset || !fill || !dot || !label) return;
+  status.textContent = "--";
+  sunrise.textContent = "--:--";
+  sunset.textContent = "--:--";
+  fill.style.width = "0%";
+  dot.style.left = "0%";
+  label.textContent = "现在";
+  card.classList.remove("is-night");
 }
 
 function renderSunTrack(daily) {
@@ -1687,43 +1717,52 @@ function renderSunTrack(daily) {
   const sunrise = new Date(sunriseStr).getTime();
   const sunset = new Date(sunsetStr).getTime();
 
-  sunTrackSunriseTime.textContent = formatClock(sunriseStr);
-  sunTrackSunsetTime.textContent = formatClock(sunsetStr);
-
   function update() {
+    const card = document.querySelector("#sun-track-card");
+    const status = document.querySelector("#sun-track-status");
+    const sunriseTime = document.querySelector("#sun-track-sunrise-time");
+    const sunsetTime = document.querySelector("#sun-track-sunset-time");
+    const fill = document.querySelector("#sun-track-fill");
+    const dot = document.querySelector("#sun-track-dot");
+    const label = document.querySelector("#sun-track-dot-label");
+    if (!card || !status || !sunriseTime || !sunsetTime || !fill || !dot || !label) return;
+
     const now = Date.now();
     const isNight = now < sunrise || now >= sunset;
 
-    sunTrackCard.classList.toggle("is-night", isNight);
+    card.classList.toggle("is-night", isNight);
 
     if (isNight) {
-      sunTrackStatus.textContent = "夜间";
-      sunTrackStatus.classList.add("is-night");
-      sunTrackDotLabel.textContent = "夜间";
+      status.textContent = "夜间";
+      status.classList.add("is-night");
+      label.textContent = "夜间";
 
       if (now < sunrise) {
-        // 日出之前：进度条为空，小球在最左
-        sunTrackFill.style.width = "0%";
-        sunTrackDot.style.left = "0%";
+        fill.style.width = "0%";
+        dot.style.left = "0%";
       } else {
-        // 日落之后：进度条满，小球在最右
-        sunTrackFill.style.width = "100%";
-        sunTrackDot.style.left = "100%";
+        fill.style.width = "100%";
+        dot.style.left = "100%";
       }
     } else {
-      sunTrackStatus.textContent = "白天";
-      sunTrackStatus.classList.remove("is-night");
-      sunTrackDotLabel.textContent = "现在";
+      status.textContent = "白天";
+      status.classList.remove("is-night");
+      label.textContent = "现在";
 
       const duration = sunset - sunrise;
       const elapsed = now - sunrise;
       const progress = Math.max(0, Math.min(1, elapsed / duration));
       const pct = (progress * 100).toFixed(1);
 
-      sunTrackFill.style.width = pct + "%";
-      sunTrackDot.style.left = pct + "%";
+      fill.style.width = pct + "%";
+      dot.style.left = pct + "%";
     }
   }
+
+  const sunriseTimeEl = document.querySelector("#sun-track-sunrise-time");
+  const sunsetTimeEl = document.querySelector("#sun-track-sunset-time");
+  if (sunriseTimeEl) sunriseTimeEl.textContent = formatClock(sunriseStr);
+  if (sunsetTimeEl) sunsetTimeEl.textContent = formatClock(sunsetStr);
 
   update();
   sunTrackTimer = window.setInterval(update, 60 * 1000);
@@ -2083,11 +2122,16 @@ function renderChart(hourly) {
     return;
   }
 
+  const canvas = document.querySelector("#temperature-chart");
+  if (!canvas) {
+    return;
+  }
+
   if (temperatureChart) {
     temperatureChart.destroy();
   }
 
-  temperatureChart = new Chart(chartCanvas, {
+  temperatureChart = new Chart(canvas, {
     type: "line",
     data: {
       labels: next24.labels,
