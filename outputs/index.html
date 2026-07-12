@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Nunito:wght@400;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=ios-polish-1">
+</head>
+<body>
+  <canvas class="weather-effect-canvas" id="weather-effect-canvas" aria-hidden="true"></canvas>
+  <div class="app-shell">
+    <!-- === UI REFACTOR START === -->
+    <header class="topbar" aria-label="天气查询">
+      <div class="search-area">
+        <form class="search" id="search-form">
+          <label class="sr-only" for="city-input">搜索区县或城市</label>
+          <input id="city-input" type="search" placeholder="输入区县或城市，例如 潮南区 / Shantou" autocomplete="off" required>
+          <button type="submit" aria-label="查询天气">查</button>
+          <button class="locate-button" id="location-button" type="button" aria-label="定位当前位置">⌖</button>
+        </form>
+        <div class="search-results" id="search-results" hidden></div>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换深色模式">☾</button>
+    </header>
+
+    <main class="dashboard">
+      <aside class="city-panel" aria-label="收藏城市">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">saved cities</p>
+            <h2>收藏城市</h2>
+          </div>
+          <button class="ghost-button" id="favorite-button" type="button">收藏当前</button>
+        </div>
+        <div class="city-list" id="favorite-list"></div>
+      </aside>
+
+      <section class="weather-main" aria-live="polite">
+        <div class="status-bar" id="status-bar">输入区县或城市名，查看实时天气。</div>
+
+        <section class="current-grid">
+          <article class="current-card">
+            <div class="current-card-top">
+              <div class="location-info">
+                <p class="eyebrow">current weather</p>
+                <h2 id="location-name">等待查询</h2>
+                <p class="weather-state" id="weather-state">选择一座城市开始</p>
+              </div>
+              <div class="weather-animation" id="weather-animation" aria-hidden="true">
+                <span class="weather-animation-fallback">☀</span>
+              </div>
+            </div>
+            <div class="temp-block">
+              <span id="current-temp">--</span>
+              <small>°C</small>
+            </div>
+            <p class="daily-range" id="daily-range">最高 --° / 最低 --°</p>
+            <div class="weather-stats" aria-label="当前天气指标">
+              <div class="stat-pill">
+                <span aria-hidden="true">💧</span>
+                <p>湿度 <strong id="humidity">--</strong>%</p>
+              </div>
+              <div class="stat-pill">
+                <span aria-hidden="true">〰</span>
+                <p>风速 <strong id="wind-speed">--</strong> km/h</p>
+              </div>
+              <div class="stat-pill">
+                <span aria-hidden="true">☀</span>
+                <p>日出 <strong id="sunrise-time">--:--</strong></p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- === SUNRISE SUNSET BAR START === -->
+        <section class="sun-track-card" id="sun-track-card" aria-label="日出日落进度">
+          <div class="sun-track-head">
+            <div>
+              <p class="eyebrow">sunrise &amp; sunset</p>
+              <h2>日出日落</h2>
+            </div>
+            <span class="sun-track-status" id="sun-track-status">--</span>
+          </div>
+          <div class="sun-track-body">
+            <span class="sun-track-label sun-track-sunrise">
+              <span aria-hidden="true">🌅</span>
+              <strong id="sun-track-sunrise-time">--:--</strong>
+            </span>
+            <div class="sun-track-bar" id="sun-track-bar">
+              <div class="sun-track-rail">
+                <div class="sun-track-fill" id="sun-track-fill"></div>
+              </div>
+              <div class="sun-track-dot" id="sun-track-dot">
+                <span class="sun-track-dot-label" id="sun-track-dot-label">现在</span>
+              </div>
+            </div>
+            <span class="sun-track-label sun-track-sunset">
+              <span aria-hidden="true">🌇</span>
+              <strong id="sun-track-sunset-time">--:--</strong>
+            </span>
+          </div>
+        </section>
+        <!-- === SUNRISE SUNSET BAR END === -->
+
+        <!-- === AQI & UVI START === -->
+        <section class="insight-grid" aria-label="空气质量与紫外线指数">
+          <article class="insight-card aqi-card" id="aqi-card">
+            <div class="insight-head">
+              <div>
+                <p class="eyebrow">air quality</p>
+                <h2>空气质量</h2>
+              </div>
+              <span class="insight-icon" aria-hidden="true">AQI</span>
+            </div>
+            <div class="insight-value-row">
+              <strong id="aqi-value">--</strong>
+              <span id="aqi-level">暂无数据</span>
+            </div>
+            <div class="aqi-bar" aria-hidden="true">
+              <span></span>
+            </div>
+            <p class="insight-tip" id="aqi-tip">适合户外活动</p>
+          </article>
+
+          <article class="insight-card uvi-card" id="uvi-card">
+            <div class="insight-head">
+              <div>
+                <p class="eyebrow">uv index</p>
+                <h2>紫外线峰值</h2>
+              </div>
+              <span class="insight-icon" aria-hidden="true">☀</span>
+            </div>
+            <div class="insight-value-row">
+              <strong id="uvi-value">--</strong>
+              <span id="uvi-level">暂无数据</span>
+            </div>
+            <p class="insight-tip" id="uvi-tip">外出建议佩戴太阳镜</p>
+          </article>
+        </section>
+        <!-- === AQI & UVI END === -->
+
+        <section class="forecast-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">5-day forecast</p>
+              <h2>5 天天气预报</h2>
+            </div>
+          </div>
+          <div class="forecast-row" id="forecast-row"></div>
+        </section>
+
+        <section class="chart-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">next 24 hours</p>
+              <h2>24 小时温度</h2>
+            </div>
+            <p id="chart-note">°C</p>
+          </div>
+          <div class="chart-frame">
+            <canvas id="temperature-chart" aria-label="24小时温度折线图" role="img"></canvas>
+          </div>
+        </section>
+      </section>
+    </main>
+    <!-- === UI REFACTOR END === -->
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    window.loadWeatherLottieFallback = function () {
+      if (customElements.get("lottie-player")) return;
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/@lottiefiles/lottie-player@2.0.12/dist/lottie-player.min.js";
+      document.head.appendChild(script);
+    };
+  </script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.12/dist/lottie-player.min.js" onerror="loadWeatherLottieFallback()"></script>
+  <script src="./app.js?v=ios-polish-1"></script>
+</body>
+</html>
