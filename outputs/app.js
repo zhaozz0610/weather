@@ -34,7 +34,7 @@ const gaodeApiKey =
   readStoredValue("GAODE_API_KEY") ||
   readStoredValue("AMAP_API_KEY") ||
   readStoredValue("gaode-api-key") ||
-  "";
+  "cd5661b116d6f1dfef689e0e01c84ec1";
 
 function gcjToWgs(lat, lng) {
   const PI = Math.PI;
